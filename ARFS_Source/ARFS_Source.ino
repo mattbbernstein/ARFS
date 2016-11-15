@@ -3,7 +3,7 @@
 //======================================
 // Matt Bernstein
 // mattbbernstein@gatech.edu
-// Last updated: 10/14/2016
+// Last updated: 11/15/2016 -- Master Branch
 
 #include "globals.h"
 
