@@ -24,6 +24,7 @@ void setup() {
     lockout_us = EPEE_LOCKOUT;
     debounce_us = EPEE_DEBOUNCE;
     attachInterrupt(digitalPinToInterrupt(ALinePin),hitRegistered,RISING);
+    attachInterrupt(digitalPinToInterrupt(CLinePin),touchRegistered,RISING);
   } else if(READ(foilModePin)==LOW){
     mode = FOIL;
     lockout_us = FOIL_LOCKOUT;
@@ -95,12 +96,12 @@ void loop() {
     // If we have been touched + debounce time
     if(touch && micros() >= touchTime + debounce_us){
       bool validTouch = true;
-      if(mode == FOIL){ // Account for debounce time in foil
-        validTouch = (READ(ALinePin) == HIGH);
-        if(!validTouch) touch = false;
-      }
-      // If the touch is valid
-      if(validTouch){
+      if(mode == EPEE) validtouch = (READ(CLinePin) == HIGH);
+      if(mode == FOIL) validtouch = (READ(ALinePin) == HIGH);
+      // If not, reset the hit flag
+      if(!validTouch){
+        touch = false;
+      }else(validTouch){
         TURN_ON(touchLEDPin);           // Light goes on
         BUZZ_ON(buzzerPin);           // Buzz buzz
         if(!lockoutStart){  // Start the lockout period if we havent already
@@ -110,6 +111,8 @@ void loop() {
       }
     } // END IF TOUCH
   }
+
+  TURN_OFF(BLinePin);
 
   // End routines before reset
   delay(BUZZER_LINGER_ms);
