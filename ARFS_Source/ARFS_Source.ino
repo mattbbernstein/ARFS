@@ -10,6 +10,7 @@
 void setup() {
   // SETUP INPUT AND OUTPUT
   setUpPins();
+  Serial.begin(9600);
   
   analogWriteResolution(10);                    // Sets analog read and write to use the same # of bits (0 - 1024)
   analogWriteFrequency(BLinePin,46875);         // Optimal analog frequency http://www.pjrc.com/teensy/td_pulse.html
@@ -91,8 +92,14 @@ void epeeLoop(){
       hitTime = loopTime;
     }
 
-    if(hit && loopTime-hitTime >= EPEE_DEBOUNCE){ // If we're debounce time after the hit
+    if(!touch && READ(CLinePin)==LOW){              // Checks bell guard grounding
+      touch = true;
+      touchTime = loopTime;
+    }
+
+    if(hit &&!validHit && loopTime-hitTime >= EPEE_DEBOUNCE){ // If we're debounce time after the hit
       if(READ(ALinePin) == LOW){  // If we're still pressing the button and we haven't started lockout
+        validHit = true;
         TURN_ON(hitLEDPin);
         BUZZ_ON(buzzerPin);
         if(!lockoutStart){                            // If we haven't started the lockout period
@@ -103,6 +110,20 @@ void epeeLoop(){
         hit = false;
       }
     }// End hit check
+
+    if(touch &&!validTouch && loopTime-touchTime >= EPEE_DEBOUNCE){ // If we're debounce time after the hit
+      if(READ(CLinePin) == LOW){  // If we're still pressing the button and we haven't started lockout
+        validTouch = true;
+        TURN_ON(touchLEDPin);
+        BUZZ_ON(buzzerPin);
+        if(!lockoutStart){                            // If we haven't started the lockout period
+          lockoutStart = true;                        // Start lockout zone
+          lockoutStartTime = loopTime;                // Markout lockout start time
+        }
+      } else {                                    // Else, we didn't meet debounce
+        touch = false;
+      }
+    }// End touch check (for bell guard grounding)
   
   }// End infinite while
 }
@@ -116,6 +137,7 @@ void foilLoop(){
   ATURN_OFF(BLinePin);  // Set the BLine to 0% cycle
   
   while(true){
+
     int loopTime = micros();
     int val;
 
@@ -146,7 +168,7 @@ void foilLoop(){
         }
       } else {                                      // Else we didnt meet debounce
         hit = false;
-        ATURN_OFF(BLinePin,0);                      // Reset the signal to 0%
+        ATURN_OFF(BLinePin);                      // Reset the signal to 0%
       }
     }// End hit check
 
