@@ -3,7 +3,7 @@
 //======================================
 // Matt Bernstein
 // mattbbernstein@gatech.edu
-// Last updated: 11/15/2016 -- Master Branch
+// Last updated: 10/14/2016
 
 #include "globals.h"
 
@@ -21,21 +21,20 @@ void setup() {
   delay(10);
   if(READ(epeeModePin)==LOW){
     mode = EPEE;
-    lockout_us = EPEE_LOCKOUT;
-    debounce_us = EPEE_DEBOUNCE;
-    attachInterrupt(digitalPinToInterrupt(ALinePin),hitRegistered,RISING);
-    //attachInterrupt(digitalPinToInterrupt(CLinePin),touchRegistered,RISING);
+    //lockout_us = EPEE_LOCKOUT;
+    //debounce_us = EPEE_DEBOUNCE;
+    //attachInterrupt(digitalPinToInterrupt(ALinePin),hitRegistered,RISING);
   } else if(READ(foilModePin)==LOW){
     mode = FOIL;
-    lockout_us = FOIL_LOCKOUT;
-    debounce_us = FOIL_DEBOUNCE;
-    attachInterrupt(digitalPinToInterrupt(CLinePin),hitRegistered,FALLING);
-    attachInterrupt(digitalPinToInterrupt(ALinePin),touchRegistered,RISING);
+    //lockout_us = FOIL_LOCKOUT;
+    //debounce_us = FOIL_DEBOUNCE;
+    //attachInterrupt(digitalPinToInterrupt(CLinePin),hitRegistered,FALLING);
+    //attachInterrupt(digitalPinToInterrupt(ALinePin),touchRegistered,RISING);
   } else if(READ(sabreModePin)==LOW){
     mode = SABRE;
-    lockout_us = SABRE_LOCKOUT;
-    debounce_us = SABRE_DEBOUNCE;
-    attachInterrupt(digitalPinToInterrupt(ALinePin),touchRegistered,RISING);
+    //lockout_us = SABRE_LOCKOUT;
+    //debounce_us = SABRE_DEBOUNCE;
+   // attachInterrupt(digitalPinToInterrupt(ALinePin),touchRegistered,RISING);
   }
 
   TURN_OFF(modeSourcePin);
@@ -62,54 +61,14 @@ void loop() {
 
   TURN_ON(BLinePin);
 
-  bool execute = checkResidual(); // Checks if the button is being held down or any residual/consistent connection;
+  //bool execute = checkResidual(); // Checks if the button is being held down or any residual/consistent connection;
 
-  while(execute){
-   // startTime = micros();
-
-    // If we've been locked out, stop everything
-    if(lockoutStart){
-      if(micros() >= lockoutStartTime + lockout_us){
-        break;
-      }
-    }
-    
-    // If we have hit + debounce time
-    if(hit && micros() >= hitTime + debounce_us){
-      // Check to see if we're still depressing the button
-      bool validHit = false;
-      if(mode == EPEE) validHit = (READ(ALinePin) == HIGH);
-      if(mode == FOIL) validHit = (READ(CLinePin) == LOW);
-      // If not, reset the hit flag
-      if(!validHit){
-        hit = false;
-      }else{ // If it is valid
-        TURN_ON(hitLEDPin);           // Light goes on
-        BUZZ_ON(buzzerPin);           // Buzz buzz
-        if(!lockoutStart){  // Start the lockout period if we havent already
-          lockoutStartTime = micros();  // Set the lockout timer
-          lockoutStart = true;          // Flag lockout
-        }
-      }
-    } // END IF HIT
-
-    // If we have been touched + debounce time
-    if(touch && micros() >= touchTime + debounce_us){
-      bool validTouch = true;
-      //if(mode == EPEE) validTouch = (READ(CLinePin) == HIGH);
-      if(mode == FOIL) validTouch = (READ(ALinePin) == HIGH);
-      // If not, reset the hit flag
-      if(!validTouch){
-        touch = false;
-      }else{
-        TURN_ON(touchLEDPin);           // Light goes on
-        BUZZ_ON(buzzerPin);           // Buzz buzz
-        if(!lockoutStart){  // Start the lockout period if we havent already
-          lockoutStartTime = micros();  // Set the lockout timer
-          lockoutStart = true;          // Flag lockout
-        }
-      }
-    } // END IF TOUCH
+  if(mode == EPEE){
+    epeeLoop();
+  } else if(mode == FOIL){
+    foilLoop();
+  } else if(mode == SABRE){
+    sabreLoop();
   }
 
   TURN_OFF(BLinePin);
@@ -123,81 +82,115 @@ void loop() {
   delay(1000);
 }
 
-void hitRegistered() {
-  if(!hit){
-    hitTime = micros();
-    hit = true;
-  }
+//=============================================================//
+//=============================================================//
+
+void epeeLoop(){
+  while(true){
+    int loopTime = micros();
+
+    if(lockoutStart && loopTime - lockoutStartTime >= EPEE_LOCKOUT){  // If we're in the lockout period, check time
+      break;          // Break the loop if lockout ends
+    }
+    
+    if(!hit && READ(ALinePin)==HIGH){               // If we haven't already hit and we're pressing the button
+      hit = true;
+      hitTime = loopTime;
+    }
+
+    if(hit && loopTime-hitTime >= EPEE_DEBOUNCE){ // If we're debounce time after the hit
+      if(READ(ALinePin) == HIGH){  // If we're still pressing the button and we haven't started lockout
+        TURN_ON(hitLEDPin);
+        BUZZ_ON(buzzerPin);
+        if(!lockoutStart){                            // If we haven't started the lockout period
+          lockoutStart = true;                        // Start lockout zone
+          lockoutStartTime = loopTime;                // Markout lockout start time
+        }
+      } else {                                    // Else, we didn't meet debounce
+        hit = false;
+      }
+    }// End hit check
+  
+  }// End infinite while
 }
 
-void touchRegistered() {
-  if(!touch){
-    touchTime = micros();
-    touch = true;
-  }
+//=============================================================//
+//=============================================================//
+
+void foilLoop(){
+  while(true){
+    int loopTime = micros();
+
+    if(lockoutStart && loopTime-lockoutStartTime >= FOIL_LOCKOUT){  // If we're in the lockout period
+      break;    // Break the loop if lockout ends
+    }
+
+    if(!hit && READ(CLinePin) == LOW){          // If we havent hit and we're pressing the button
+      hit = true;
+      hitTime = loopTime;
+    }
+
+    if(!touch && READ(ALinePin) == HIGH){       // If we haven't been touched and the lame is going high
+      touch = true;
+      touchTime = loopTime;
+    }
+
+    if(hit && loopTime-hitTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
+      if(READ(CLinePin) == LOW){   // If we're still pressing the button and we haven't started lockout
+        TURN_ON(hitLEDPin);
+        BUZZ_ON(buzzerPin);
+        if(!lockoutStart){                            // If we haven't started the lockout period
+          lockoutStart = true;                        // Start lockout period
+          lockoutStartTime = loopTime;                // Mark the lockout time
+        }
+      } else {                                      // Else we didnt meet debounce
+        hit = false;
+      }
+    }// End hit check
+
+    if(touch && loopTime-touchTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
+      if(READ(ALinePin) == HIGH){   // If we're still pressing the button and we haven't started lockout
+        TURN_ON(touchLEDPin);
+        BUZZ_ON(buzzerPin);
+        if(!lockoutStart){                            // If we haven't started the lockout period
+          lockoutStart = true;                        // Start lockout period
+          lockoutStartTime = loopTime;                // Mark the lockout time
+        }
+      } else {                                      // Else we didnt meet debounce
+        touch = false;
+      }
+    }// End touch check
+    
+  }// End infinte while
 }
 
-void setUpPins(){
-  POUTPUT(modeSourcePin);
-  PPULLUP(epeeModePin);
-  PPULLUP(foilModePin);
-  PPULLUP(sabreModePin);
-  PINPUT(ALinePin);
-  POUTPUT(BLinePin);
-  PINPUT(CLinePin);
-  POUTPUT(hitLEDPin);
-  POUTPUT(touchLEDPin);
-  POUTPUT(buzzerPin);
+//=============================================================//
+//=============================================================//
+
+void sabreLoop(){
+   while(true){
+    int loopTime = micros();
+
+    if(lockoutStart && loopTime-lockoutStartTime >= SABRE_LOCKOUT){  // If we're in the lockout period, check time
+      break;          // Break the loop if lockout ends
+    }
+    
+    if(!touch && READ(ALinePin)==HIGH){               // If we haven't already hit and we're pressing the button
+      touch = true;
+      touchTime = loopTime;
+    }
+
+    if(touch){                                    // If we've been touched
+      TURN_ON(touchLEDPin);
+      BUZZ_ON(buzzerPin);
+      if(!lockoutStart){                            // If we haven't started the lockout period
+        lockoutStart = true;                        // Start lockout zone
+        lockoutStartTime = loopTime;                // Markout lockout start time
+      }
+    }// End touch check
+  
+  }// End infinite while
 }
 
-void chirp(int time_ms){
-  BUZZ_ON(buzzerPin);
-  delay(time_ms);
-  BUZZ_OFF(buzzerPin);
-}
 
-void resetBeeps(){
-  chirp(100);
-  delay(100);
-  chirp(100);
-  delay(100);  
-  chirp(100);
-  delay(100);
-  chirp(500);
-
-  hit = false;
-  touch = false;
-  lockedOut = false;
-  lockoutStart = false;
-}
-
-bool checkResidual(){
-  bool execute = true;
-  if(mode == FOIL && READ(CLinePin)==LOW){
-    hit = true;
-    execute = false;
-    hitTime = micros();
-  }
-
-  if(mode == FOIL && READ(ALinePin)==HIGH){
-    touch = true;
-    execute = false;
-    touchTime = micros();
-  }
-
-  if(mode == SABRE && READ(ALinePin)==HIGH){
-    touch = true;
-    execute = false;
-    touchTime = micros();
-  }
-
-  if(mode == EPEE && READ(ALinePin)==HIGH){
-    hit = true;
-    execute = false;
-    hitTime = micros();
-  }
-
-  execute = true;
-  return execute;
-}
 
