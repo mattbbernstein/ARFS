@@ -12,30 +12,33 @@
 #define SABRE_LOCKOUT 170000
 
 // PIN DEFINITIONS
-const int modeSourcePin = 18;
-const int epeeModePin = 17;
-const int foilModePin = 19;
-const int sabreModePin = 20;
-const int ALinePin = 21;
+const int modeSourcePin = 17;
+const int epeeModePin = 16;
+const int foilModePin = 18;
+const int sabreModePin = 19;
+const int ALinePin = 20;
 const int BLinePin = 22;
 const int CLinePin = 23;
 const int hitLEDPin = 2;
 const int touchLEDPin = 1;
-const int buzzerPin= 7;
+const int buzzerPin = 7;
 
 
 // GLOBALS AND CONSTANTS
 
 #define BUZZER_LINGER_ms 1500
 #define LIGHTS_LINGER_ms 2000
-#define BUZZ_TONE      4000
+#define BUZZ_TONE        4000
+#define PULSE            127
 
 #define PINPUT(x)   pinMode((x),INPUT)
 #define POUTPUT(x)  pinMode((x),OUTPUT)
 #define PPULLUP(x)  pinMode((x),INPUT_PULLUP)
 #define TURN_ON(x)  digitalWrite((x),HIGH)
 #define TURN_OFF(x) digitalWrite((x),LOW)
+#define PULSE_ON(x) analogWrite((x),PULSE);
 #define READ(x)     digitalRead(x)
+#define AREAD(x)    analogRead(x)
 #define BUZZ_ON(x)  tone((x),BUZZ_TONE);
 #define BUZZ_OFF(x) noTone((x))
 

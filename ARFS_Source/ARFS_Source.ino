@@ -11,6 +11,9 @@ void setup() {
   // SETUP INPUT AND OUTPUT
   setUpPins();
 
+  analogReadResolution(8);
+  analogWriteResolution(8);
+
   BUZZ_ON(buzzerPin);
   delay(1000);
   BUZZ_OFF(buzzerPin);
@@ -21,20 +24,10 @@ void setup() {
   delay(10);
   if(READ(epeeModePin)==LOW){
     mode = EPEE;
-    //lockout_us = EPEE_LOCKOUT;
-    //debounce_us = EPEE_DEBOUNCE;
-    //attachInterrupt(digitalPinToInterrupt(ALinePin),hitRegistered,RISING);
   } else if(READ(foilModePin)==LOW){
     mode = FOIL;
-    //lockout_us = FOIL_LOCKOUT;
-    //debounce_us = FOIL_DEBOUNCE;
-    //attachInterrupt(digitalPinToInterrupt(CLinePin),hitRegistered,FALLING);
-    //attachInterrupt(digitalPinToInterrupt(ALinePin),touchRegistered,RISING);
   } else if(READ(sabreModePin)==LOW){
     mode = SABRE;
-    //lockout_us = SABRE_LOCKOUT;
-    //debounce_us = SABRE_DEBOUNCE;
-   // attachInterrupt(digitalPinToInterrupt(ALinePin),touchRegistered,RISING);
   }
 
   TURN_OFF(modeSourcePin);
@@ -59,7 +52,7 @@ void loop() {
   // Alerting the all go
   resetBeeps();
 
-  TURN_ON(BLinePin);
+  TURN_OFF(BLinePin);
 
   //bool execute = checkResidual(); // Checks if the button is being held down or any residual/consistent connection;
 
@@ -71,7 +64,7 @@ void loop() {
     sabreLoop();
   }
 
-  TURN_OFF(BLinePin);
+  TURN_ON(BLinePin);
 
   // End routines before reset
   delay(BUZZER_LINGER_ms);
@@ -93,13 +86,13 @@ void epeeLoop(){
       break;          // Break the loop if lockout ends
     }
     
-    if(!hit && READ(ALinePin)==HIGH){               // If we haven't already hit and we're pressing the button
+    if(!hit && READ(ALinePin)== LOW){               // If we haven't already hit and we're pressing the button
       hit = true;
       hitTime = loopTime;
     }
 
     if(hit && loopTime-hitTime >= EPEE_DEBOUNCE){ // If we're debounce time after the hit
-      if(READ(ALinePin) == HIGH){  // If we're still pressing the button and we haven't started lockout
+      if(READ(ALinePin) == LOW){  // If we're still pressing the button and we haven't started lockout
         TURN_ON(hitLEDPin);
         BUZZ_ON(buzzerPin);
         if(!lockoutStart){                            // If we haven't started the lockout period
@@ -125,18 +118,19 @@ void foilLoop(){
       break;    // Break the loop if lockout ends
     }
 
-    if(!hit && READ(CLinePin) == LOW){          // If we havent hit and we're pressing the button
+    if(!hit && READ(CLinePin) == HIGH){          // If we havent hit and we're pressing the button
       hit = true;
       hitTime = loopTime;
+      PULSE_ON(BLinePin);
     }
 
-    if(!touch && READ(ALinePin) == HIGH){       // If we haven't been touched and the lame is going high
+    if(!touch && AREAD(ALinePin) == PULSE){       // If we haven't been touched and the lame is going high
       touch = true;
       touchTime = loopTime;
     }
 
     if(hit && loopTime-hitTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
-      if(READ(CLinePin) == LOW){   // If we're still pressing the button and we haven't started lockout
+      if(READ(CLinePin) == HIGH){   // If we're still pressing the button and we haven't started lockout
         TURN_ON(hitLEDPin);
         BUZZ_ON(buzzerPin);
         if(!lockoutStart){                            // If we haven't started the lockout period
@@ -149,7 +143,7 @@ void foilLoop(){
     }// End hit check
 
     if(touch && loopTime-touchTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
-      if(READ(ALinePin) == HIGH){   // If we're still pressing the button and we haven't started lockout
+      if(AREAD(ALinePin) == PULSE){   // If we're still pressing the button and we haven't started lockout
         TURN_ON(touchLEDPin);
         BUZZ_ON(buzzerPin);
         if(!lockoutStart){                            // If we haven't started the lockout period
@@ -175,7 +169,7 @@ void sabreLoop(){
       break;          // Break the loop if lockout ends
     }
     
-    if(!touch && READ(ALinePin)==HIGH){               // If we haven't already hit and we're pressing the button
+    if(!touch && READ(ALinePin) == LOW){               // If we haven't already hit and we're pressing the button
       touch = true;
       touchTime = loopTime;
     }
