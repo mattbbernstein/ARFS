@@ -18,9 +18,9 @@ void setUpPins(){
   PPULLUP(epeeModePin);
   PPULLUP(foilModePin);
   PPULLUP(sabreModePin);
-  PINPUT(ALinePin);
+  PPULLUP(ALinePin);
   POUTPUT(BLinePin);
-  PINPUT(CLinePin);
+  PPULLUP(CLinePin);
   POUTPUT(hitLEDPin);
   POUTPUT(touchLEDPin);
   POUTPUT(buzzerPin);
@@ -42,7 +42,9 @@ void resetBeeps(){
   chirp(500);
 
   hit = false;
+  validHit = false;
   touch = false;
+  validTouch = false;
   lockedOut = false;
   lockoutStart = false;
 }

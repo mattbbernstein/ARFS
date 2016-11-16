@@ -10,10 +10,10 @@
 void setup() {
   // SETUP INPUT AND OUTPUT
   setUpPins();
-
-  analogReadResolution(8);
-  analogWriteResolution(8);
-
+  
+  analogWriteResolution(10);                    // Sets analog read and write to use the same # of bits (0 - 1024)
+  analogWriteFrequency(BLinePin,46875);         // Optimal analog frequency http://www.pjrc.com/teensy/td_pulse.html
+                                                // Default frequency so low, reading was too erratic, this line ensures the resolution is accurate
   BUZZ_ON(buzzerPin);
   delay(1000);
   BUZZ_OFF(buzzerPin);
@@ -52,7 +52,7 @@ void loop() {
   // Alerting the all go
   resetBeeps();
 
-  TURN_OFF(BLinePin);
+  TURN_OFF(BLinePin); // Drive low (ON)
 
   //bool execute = checkResidual(); // Checks if the button is being held down or any residual/consistent connection;
 
@@ -64,7 +64,7 @@ void loop() {
     sabreLoop();
   }
 
-  TURN_ON(BLinePin);
+  TURN_ON(BLinePin);   // Drive high (OFF)
 
   // End routines before reset
   delay(BUZZER_LINGER_ms);
@@ -111,8 +111,13 @@ void epeeLoop(){
 //=============================================================//
 
 void foilLoop(){
+
+  POUTPUT(BLinePin);    // Reset the BLine for analog out
+  ATURN_OFF(BLinePin);  // Set the BLine to 0% cycle
+  
   while(true){
     int loopTime = micros();
+    int val;
 
     if(lockoutStart && loopTime-lockoutStartTime >= FOIL_LOCKOUT){  // If we're in the lockout period
       break;    // Break the loop if lockout ends
@@ -121,16 +126,18 @@ void foilLoop(){
     if(!hit && READ(CLinePin) == HIGH){          // If we havent hit and we're pressing the button
       hit = true;
       hitTime = loopTime;
-      PULSE_ON(BLinePin);
+      PULSE_ON(BLinePin);                       // Set the pulse for foil
     }
 
-    if(!touch && AREAD(ALinePin) == PULSE){       // If we haven't been touched and the lame is going high
+    val = AREAD(ALinePin);                      // Read the analog input
+    if(!touch && val >= PULSE-PULSE_RNG && val <= PULSE+PULSE_RNG){       // If we haven't been touched and the lame is reading pulse signal
       touch = true;
       touchTime = loopTime;
     }
 
-    if(hit && loopTime-hitTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
+    if(hit && !validHit && loopTime-hitTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
       if(READ(CLinePin) == HIGH){   // If we're still pressing the button and we haven't started lockout
+        validHit = true;
         TURN_ON(hitLEDPin);
         BUZZ_ON(buzzerPin);
         if(!lockoutStart){                            // If we haven't started the lockout period
@@ -139,11 +146,14 @@ void foilLoop(){
         }
       } else {                                      // Else we didnt meet debounce
         hit = false;
+        ATURN_OFF(BLinePin,0);                      // Reset the signal to 0%
       }
     }// End hit check
 
-    if(touch && loopTime-touchTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
-      if(AREAD(ALinePin) == PULSE){   // If we're still pressing the button and we haven't started lockout
+    if(touch && !validTouch && loopTime-touchTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
+      int val = AREAD(ALinePin);
+      if(val >= PULSE-PULSE_RNG && val <= PULSE+PULSE_RNG){   // If we're still reading pulse
+        validTouch = true;
         TURN_ON(touchLEDPin);
         BUZZ_ON(buzzerPin);
         if(!lockoutStart){                            // If we haven't started the lockout period
@@ -156,6 +166,8 @@ void foilLoop(){
     }// End touch check
     
   }// End infinte while
+
+  POUTPUT(BLinePin);                                // Reset the Bline for digital
 }
 
 //=============================================================//
