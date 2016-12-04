@@ -21,7 +21,7 @@ const int BLinePin = 22;
 const int CLinePin = 23;
 const int hitLEDPin = 2;
 const int touchLEDPin = 1;
-const int buzzerPin = 7;
+const int buzzerPin = 6;
 
 
 // GLOBALS AND CONSTANTS
