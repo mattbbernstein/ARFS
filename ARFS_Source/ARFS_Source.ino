@@ -53,7 +53,7 @@ void loop() {
   // Alerting the all go
   resetBeeps();
 
-  TURN_OFF(BLinePin); // Drive low (ON)
+  TURN_ON(BLinePin); // Drive HIGH (ON)
 
   //bool execute = checkResidual(); // Checks if the button is being held down or any residual/consistent connection;
 
@@ -65,7 +65,7 @@ void loop() {
     sabreLoop();
   }
 
-  TURN_ON(BLinePin);   // Drive high (OFF)
+  TURN_OFF(BLinePin);   // Drive LOW (OFF)
 
   // End routines before reset
   delay(BUZZER_LINGER_ms);
@@ -87,18 +87,18 @@ void epeeLoop(){
       break;          // Break the loop if lockout ends
     }
     
-    if(!hit && READ(ALinePin)== LOW){               // If we haven't already hit and we're pressing the button
+    if(!hit && READ(ALinePin)== HIGH){               // If we haven't already hit and we're pressing the button
       hit = true;
       hitTime = loopTime;
     }
 
-    if(!touch && READ(CLinePin)==LOW){              // Checks bell guard grounding
+    if(!touch && READ(CLinePin)==HIGH){              // Checks bell guard grounding
       touch = true;
       touchTime = loopTime;
     }
 
     if(hit &&!validHit && loopTime-hitTime >= EPEE_DEBOUNCE){ // If we're debounce time after the hit
-      if(READ(ALinePin) == LOW){  // If we're still pressing the button and we haven't started lockout
+      if(READ(ALinePin) == HIGH){  // If we're still pressing the button and we haven't started lockout
         validHit = true;
         TURN_ON(hitLEDPin);
         BUZZ_ON(buzzerPin);
@@ -112,7 +112,7 @@ void epeeLoop(){
     }// End hit check
 
     if(touch &&!validTouch && loopTime-touchTime >= EPEE_DEBOUNCE){ // If we're debounce time after the hit
-      if(READ(CLinePin) == LOW){  // If we're still pressing the button and we haven't started lockout
+      if(READ(CLinePin) == HIGH){  // If we're still pressing the button and we haven't started lockout
         validTouch = true;
         TURN_ON(touchLEDPin);
         BUZZ_ON(buzzerPin);
@@ -134,7 +134,7 @@ void epeeLoop(){
 void foilLoop(){
 
   POUTPUT(BLinePin);    // Reset the BLine for analog out
-  ATURN_OFF(BLinePin);  // Set the BLine to 0% cycle
+  ATURN_ON(BLinePin);  // Set the BLine to 0% cycle
   
   while(true){
 
@@ -145,7 +145,7 @@ void foilLoop(){
       break;    // Break the loop if lockout ends
     }
 
-    if(!hit && READ(CLinePin) == HIGH){          // If we havent hit and we're pressing the button
+    if(!hit && READ(CLinePin) == LOW){          // If we havent hit and we're pressing the button
       hit = true;
       hitTime = loopTime;
       PULSE_ON(BLinePin);                       // Set the pulse for foil
@@ -158,7 +158,7 @@ void foilLoop(){
     }
 
     if(hit && !validHit && loopTime-hitTime >= FOIL_DEBOUNCE){   // If we're debounce time after the hit
-      if(READ(CLinePin) == HIGH){   // If we're still pressing the button and we haven't started lockout
+      if(READ(CLinePin) == LOW){   // If we're still pressing the button and we haven't started lockout
         validHit = true;
         TURN_ON(hitLEDPin);
         BUZZ_ON(buzzerPin);
@@ -203,7 +203,7 @@ void sabreLoop(){
       break;          // Break the loop if lockout ends
     }
     
-    if(!touch && READ(ALinePin) == LOW){               // If we haven't already hit and we're pressing the button
+    if(!touch && READ(ALinePin) == HIGH){               // If we haven't already hit and we're pressing the button
       touch = true;
       touchTime = loopTime;
     }

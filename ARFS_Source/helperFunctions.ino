@@ -18,9 +18,9 @@ void setUpPins(){
   PPULLUP(epeeModePin);
   PPULLUP(foilModePin);
   PPULLUP(sabreModePin);
-  PPULLUP(ALinePin);
+  PINPUT(ALinePin);
   POUTPUT(BLinePin);
-  PPULLUP(CLinePin);
+  PINPUT(CLinePin);
   POUTPUT(hitLEDPin);
   POUTPUT(touchLEDPin);
   POUTPUT(buzzerPin);

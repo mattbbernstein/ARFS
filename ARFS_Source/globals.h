@@ -39,6 +39,7 @@ const int buzzerPin = 6;
 #define TURN_OFF(x) digitalWrite((x),LOW)
 #define PULSE_ON(x) analogWrite((x),PULSE);
 #define ATURN_OFF(x)analogWrite((x),0);
+#define ATURN_ON(x) analogWrite((x),1024);
 #define READ(x)     digitalRead(x)
 #define AREAD(x)    analogRead(x)
 #define BUZZ_ON(x)  tone((x),BUZZ_TONE);
